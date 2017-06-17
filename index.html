@@ -69,7 +69,7 @@ var randPoints = svg.selectAll('.rpoints')
                     .attr('cy',function(d) { return y(d[1])})
 
 var base_block = {'x0':0,'y0':0,'x1':100,'y1':100};
-var quilt_bsp = quad_partition(base_block,2)
+var quilt_bsp = quad_partition(base_block,2,0)
 var test_blocks = get_leaves(quilt_bsp)
 var test_tri = get_triangles(quilt_bsp)
 
@@ -82,7 +82,7 @@ var quilt_blocks = svg.selectAll('.qblocks')
                       .attr('y', function(d){ return y(d.y1)})
                       .attr('width', function(d){ return rect_width(d)})
                       .attr('height', function(d){ return rect_height(d)})
-var quilt_blocks = svg.selectAll('.qtri')
+var quilt_tri = svg.selectAll('.qtri')
                       .data(test_tri)
                       .enter()
                       .append('path')
@@ -90,16 +90,24 @@ var quilt_blocks = svg.selectAll('.qtri')
                       .attr('d',function(d){return d['path_spec']})
                       .style("stroke-width", 2)
                       .style("stroke", "steelblue")
-                      .style("fill", "none");
+                      .style("fill", function(d,i){
+                        if (i % 2 == 0) {
+                          return 'steelblue'
+                        } else {
+                          return 'none'
+                        }
+                      });
 
 
-function quad_partition(block,depth) {
+function quad_partition(block,depth,level) {
   if (depth == 0) {
     block.leaf = true;
-    block.children = triangle_split(block)
+    block.level = level;
+    block.children = triangle_split(block,level)
     return block
   } else {
-    block.children = quad_split(block).map(function(cb){return quad_partition(cb,depth-1)});
+    block.level = level;
+    block.children = quad_split(block).map(function(cb){return quad_partition(cb,depth-1,level+1)});
     return block
   }
 }
@@ -115,13 +123,13 @@ function quad_split(block) {
           {'x0':(x0+x1)/2,'y0':(y1+y0)/2,'x1':x1,'y1':y1}]
 }
 
-function triangle_split(block) {
+function triangle_split(block,level) {
   var x0 = block.x0,
       y0 = block.y0,
       x1 = block.x1,
       y1 = block.y1;
-  t0 = {'children':null,'path_spec':pathString([[x0,y0],[x1,y1],[x0,y1]])}
-  t1 = {'children':null,'path_spec':pathString([[x0,y0],[x1,y1],[x1,y0]])}
+  t0 = {'children':null,'level':level+1,'path_spec':pathString([[x0,y0],[x1,y1],[x0,y1]])}
+  t1 = {'children':null,'level':level+1,'path_spec':pathString([[x0,y0],[x1,y1],[x1,y0]])}
   return [t0,t1]
 }
 
@@ -191,5 +199,4 @@ function find_triangle_nodes(block) {
   }
 }
 
-function block_unpack(block) {}
 </script>
